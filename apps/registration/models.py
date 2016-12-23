@@ -26,9 +26,9 @@ class UserManager(models.Manager):
             return (False, errors)
         else:
             hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-            Users = User.objects.create(first_name = first_name, last_name = last_name, email = email, password = hashed, birthday=birthday)
+            loggedin_user = User.objects.create(first_name = first_name, last_name = last_name, email = email, password = hashed, birthday=birthday)
             newuser = "Successfully created new user"
-            return (True, Users)
+            return (True, loggedin_user)
 
     def login(self, email, password):
         errors = []
@@ -59,10 +59,10 @@ class User(models.Model):
 
 class Message(models.Model):
     message = models.TextField()
+    author = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add = True)
     updated_at = models.DateTimeField(auto_now = True)
     user = models.ForeignKey(User)
-    author = models.CharField(max_length=255)
 
 class Favorite(models.Model):
     created_at = models.DateTimeField(auto_now_add = True)

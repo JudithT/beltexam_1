@@ -5,36 +5,17 @@ from django.contrib import messages
 
 
 def index(request):
-    allusers = User.objects.all()
-
-
-
-    print "all the users in the database"
-    for user in allusers:
-        print user.id, user.first_name, user.last_name, user.email
-
-    # myuser = User.objects.get(id=1)
-    # mynewmessage = Message.objects.create(message="My first message", user = myuser, author="Albert Einstein")
-    # print "Made a new message", mynewmessage
-    mymessage = Message.objects.get(id=1)
-    print mymessage.message, mymessage.user, mymessage.author
-
     return render(request, "registration/index.html")
 
 def register(request):
-    newuser = ""
     result = User.objects.register(request.POST['first_name'], request.POST['last_name'], request.POST['email'], request.POST['password'], request.POST['confirm'], request.POST['birthday'])
     if result[0] == True:
         request.session['email'] = request.POST['email']
         request.session['id'] = result[1].id
-
-        try:
-            request.session.pop('errors')
-        except:
-            a=1
         return redirect('/quotes')
     else:
-        request.session['errors'] = result[1]
+        for message in result[1]:
+            messages.error(request, message)
         return redirect('/')
 
 
@@ -46,14 +27,11 @@ def login(request):
         # if we got true back, then result[1] is our user
         request.session['email'] = request.POST['email']
         request.session['id'] = result[1].id
-        try:
-            request.session.pop('errors')
-        except:
-            pass
         print "got the new id for logged in user", request.session['id']
         return redirect('/quotes')
     else:
-        request.session['errors'] = result[1]
+        for message in result[1]:
+            messages.error(request, message)
         return redirect('/')
 
 
@@ -63,25 +41,19 @@ def quotes(request):
         print "made it to success", request.session['id']
         email = request.session['email']
         print "session's email", email
+        user = User.objects.filter(email=email)[0]
+        favs = Favorite.objects.filter(user = user)
+        favs_ids = Favorite.objects.filter(user = user).values_list('message__id', flat=True)
+        print favs_ids
         context={
-        #user is the user who is logged in.
-        "user":User.objects.filter(email=email),
-        "messages":Message.objects.all(),
-        "favorites":Favorite.objects.all()
+            #user is the user who is logged in.
+            "user": user,
+            "messages":Message.objects.exclude(id__in=favs_ids),
+            "favorites": favs
         }
     else:
         return redirect('/')
 
-
-    # request.session['message']=request.POST['message']
-    # message = request.POST['message']
-    # print "session's quote",quote
-    # user = User.objects.filter(email=email)[0]
-    # message = Message.objects.filter(message=message)
-    # context = {
-        # "message": Message.objects.all()
-
-    # }
     return render(request, 'registration/success.html', context)
 
 
@@ -99,12 +71,10 @@ def users(request, id):
     print "you made it to userpage", id
     user = User.objects.get(id=id)
     messages=Message.objects.filter(user=user)
-    context={
-
-    "user": user,
-    "messages":messages,
-    "count":len(messages)
-
+    context = {
+        "user": user,
+        "messages":messages,
+        "count":len(messages)
     }
 
     return render(request, 'registration/users.html', context)
@@ -141,6 +111,6 @@ def removefavorite(request):
 
 def logout(request):
 
-    session.clear()
+    request.session.clear()
 
     return redirect('/')

@@ -14,9 +14,7 @@
                 {% endfor %}
             </ul>
         {% endif %}
-        {% for error in request.session.errors %}
-          <p>{{error}}</p>
-        {% endfor %}
+
 
         <form action="/register" method="post">
             {% csrf_token %}
